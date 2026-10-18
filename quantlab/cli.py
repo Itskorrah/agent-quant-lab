@@ -8,6 +8,9 @@ from pathlib import Path
 from .dashboard import export_report
 from .market import Contract, load_csv, synthetic_bars, to_csv, write_manifest
 from .notifications import telegram_preview
+from .validation import rolling_validation, sensitivity
+from .journal import record_replay, verify as verify_journal
+from .telegram import send_preview
 from .orchestration import Queue
 from .registry import Registry
 from .research import experiment, final_holdout, quality_report
@@ -43,6 +46,18 @@ def main(argv: list[str] | None = None) -> int:
     replay.add_argument("--contract", required=True)
     replay.add_argument("--out", default="runs/replay/report.json")
     replay.add_argument("--strategy", choices=["breakout", "mean_reversion"], default="breakout")
+    walk = sub.add_parser("walk-forward", help="Evaluate chronological validation folds, reserve final holdout")
+    walk.add_argument("--csv", required=True)
+    walk.add_argument("--contract", required=True)
+    walk.add_argument("--folds", type=int, default=3)
+    walk.add_argument("--gap", type=int, default=0)
+    walk.add_argument("--out", default="runs/validation/report.json")
+    stress = sub.add_parser("sensitivity", help="Run first-60-percent cost/parameter matrix")
+    stress.add_argument("--csv", required=True)
+    stress.add_argument("--contract", required=True)
+    stress.add_argument("--out", default="runs/validation/sensitivity.json")
+    audit = sub.add_parser("journal-verify", help="Verify an existing offline replay hash-chain journal")
+    audit.add_argument("--file", required=True)
     html = sub.add_parser("html", help="Export a self-contained read-only HTML report")
     html.add_argument("--report", required=True)
     html.add_argument("--out", default="runs/report.html")
@@ -51,6 +66,10 @@ def main(argv: list[str] | None = None) -> int:
     notify = sub.add_parser("notify-preview", help="Format a message, without sending it")
     notify.add_argument("--type", choices=["research_complete", "validation_failed", "paper_halted", "data_failure"], required=True)
     notify.add_argument("--reason", default="")
+    sending = sub.add_parser("notify-send", help="Send one manually approved research preview to allowlisted Telegram chat")
+    sending.add_argument("--type", choices=["research_complete", "validation_failed", "paper_halted", "data_failure"], required=True)
+    sending.add_argument("--reason", default="")
+    sending.add_argument("--confirm-send", action="store_true")
     args = parser.parse_args(argv)
     contract = Contract(contract_id=getattr(args, "contract", "MNQ-DEMO"))
     if args.command == "demo":
@@ -73,12 +92,18 @@ def main(argv: list[str] | None = None) -> int:
         print("Validated manifest:", target)
         if details["unexpected_interval_count"]:
             print("WARNING: unexpected intervals:", details["unexpected_interval_count"])
-    elif args.command in ("research", "replay"):
+    elif args.command in ("research", "replay", "walk-forward", "sensitivity"):
         if args.contract == "MNQ-DEMO":
             parser.error("Historical CSV requires actual contract ID")
         bars, details = load_csv(args.csv, contract)
-        cfg = Settings(strategy=args.strategy)
-        if args.command == "research":
+        cfg = Settings(strategy=getattr(args, "strategy", "breakout"))
+        if args.command == "walk-forward":
+            report = rolling_validation(bars, contract, cfg, folds=args.folds, gap=args.gap)
+            report["dataset"] = details
+        elif args.command == "sensitivity":
+            report = sensitivity(bars, contract, cfg)
+            report["dataset"] = details
+        elif args.command == "research":
             report = experiment(bars, contract, cfg, synthetic=False)
             report["quality_gate"] = quality_report(report["validation"])
             report["dataset"] = details
@@ -90,16 +115,22 @@ def main(argv: list[str] | None = None) -> int:
             report["mode"] = "offline_replay_not_live_paper"
             report["dataset"] = details
             report["eligible_for_live"] = False
+            report["journal"] = record_replay(Path(args.out).with_suffix(".jsonl"), report)
         json_file(args.out, report)
         print("Created", args.out, "— live and automatic orders disabled")
     elif args.command == "html":
         result = json.loads(Path(args.report).read_text(encoding="utf-8"))
         print(export_report(result, args.out))
+    elif args.command == "journal-verify":
+        print(json.dumps(verify_journal(args.file), indent=2))
     elif args.command == "tasks":
         with Queue(args.db) as queue:
             print(json.dumps(queue.list(), indent=2))
     elif args.command == "notify-preview":
         print(telegram_preview({"type": args.type, "reason": args.reason}))
+    elif args.command == "notify-send":
+        message = telegram_preview({"type": args.type, "reason": args.reason})
+        print(json.dumps(send_preview(message, confirmed=args.confirm_send)))
     return 0
 
 

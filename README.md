@@ -16,12 +16,12 @@ Agent Quant Lab is built around one principle: **a research result is only as cr
 | Instrument | Explicit MNQ contract IDs, tick size, multiplier and tick value | Implemented, one contract/run |
 | Market data | Strict UTC OHLCV CSV ingestion, corruption checks, checksum, immutable manifests, interval warnings | Implemented, file-based |
 | Backtesting | Two transparent signal rules, next-bar-open fills, long/short, costs, cash ledger, daily loss guard | **Simplified bar simulator** |
-| Validation | Chronological development/validation, reserved holdout, no automatic paper qualification | Implemented baseline; statistical rigour incomplete |
+| Validation | Chronological splits, rolling validation folds, sensitivity matrix, reserved holdout | Implemented baseline; statistical rigour incomplete |
 | Research memory | SQLite immutable experiment payloads, review decisions and audit events | Implemented |
 | Agents | Named roles, constrained task states and controlled handoffs | Local protocol; **not Hermes-connected** |
-| Paper | Offline historical replay using the same simulator | Implemented, **not live paper** |
-| Dashboard | Generated offline, escaped HTML research report | Implemented, no interactive live UI |
-| Notifications | Sanitised Telegram message preview | Implemented, **not sent** |
+| Paper | Offline historical replay with tamper-evident event journal | Implemented, **not live paper** |
+| Dashboard | Offline HTML equity chart, trade table and escaped JSON evidence | Implemented, no interactive live UI |
+| Notifications | Preview + opt-in allowlisted one-shot sender (delivery not tested live) | Implemented, **not sent** |
 | NautilusTrader | Planned independent engine integration | Not implemented |
 | Live market feed | Licensed CME market-data connection | Not implemented |
 | Broker connection | No broker or order placement code | Intentionally absent |
@@ -29,7 +29,7 @@ Agent Quant Lab is built around one principle: **a research result is only as cr
 ### What makes this foundation different
 
 - **No invented data access.** There are no secret data downloads or unverified brokerage integrations; you supply licensed historical files.
-- **Honest accounting boundaries.** The simulator records fills, trades and equity; intraday Sharpe remains deliberately unavailable rather than incorrectly annualised.
+- **Honest accounting boundaries.** The simulator records fills, trades and equity; intraday Sharpe is not invented; optional UTC-calendar-day diagnostics require sufficient days.
 - **Inspectable experiments.** Results are content-addressed in SQLite and never rewritten. CSV imports include source checksums and explicit instrument identification.
 - **Constrained agent delegation.** The coordinator may route bounded tasks, but validation roles and human approvals are not replaced by an LLM's opinion.
 - **Fail-closed defaults.** No auto promotion, no external execution and no remote dashboard exposure.
@@ -81,6 +81,16 @@ python -m quantlab html \
 python -m quantlab replay \
   --csv path/to/your-bars.csv --contract ACTUAL_CONTRACT_ID \
   --out runs/replay/report.json
+
+python -m quantlab journal-verify --file runs/replay/report.jsonl
+
+python -m quantlab walk-forward \
+  --csv path/to/your-bars.csv --contract ACTUAL_CONTRACT_ID \
+  --folds 3 --gap 2 --out runs/validation/folds.json
+
+python -m quantlab sensitivity \
+  --csv path/to/your-bars.csv --contract ACTUAL_CONTRACT_ID \
+  --out runs/validation/sensitivity.json
 ```
 
 On Windows PowerShell, enter commands on one line or replace bash `\` continuations with PowerShell backticks. The backtester needs at least 120 bars for a complete development/validation split with default settings; more observations are needed for credible research.
@@ -115,10 +125,18 @@ flowchart TB
 | `quantlab/research.py` | Chronological partitions, reserved holdout, conservative quality gate |
 | `quantlab/registry.py` | Content-addressed SQLite research history and review log |
 | `quantlab/orchestration.py` | Task schema, finite-state queue and allowed agent-to-agent handoffs |
-| `quantlab/dashboard.py` | Offline HTML reports; escaped and read-only |
+| `quantlab/dashboard.py` | Offline HTML equity curve, fills/trades and escaped evidence |
+| `quantlab/validation.py` | Rolling chronological folds and pre-holdout cost/parameter sensitivity |
+| `quantlab/journal.py` | Replay events with chained SHA-256 and integrity verification |
+| `quantlab/bridge.py` | Validates constrained untrusted JSON task requests for future Hermes integration |
+| `quantlab/telegram.py` | Opt-in HTTPS sender, credential allowlist; only mocked locally |
 | `quantlab/notifications.py` | Message formatter that never sends Telegram messages |
 | `quantlab/cli.py` | Entry point for demo, import, research, replay and report export |
 | `tests/` | Executable regression and failure-path checks |
+
+### Telegram (explicit one-time send only)
+
+`python -m quantlab notify-preview --type research_complete --reason "Review report"` formats a message without any network traffic. To enable a **single** message, set `QUANTLAB_TELEGRAM_BOT_TOKEN`, `QUANTLAB_TELEGRAM_CHAT_ID` and `QUANTLAB_TELEGRAM_ALLOWED_CHATS` as **local environment variables**, with the chosen chat ID included in the allowlist. Then explicitly run `python -m quantlab notify-send --type research_complete --reason "Review report" --confirm-send`. Never put secrets in repository files or shell history. This has only been verified using a mocked network response, not a real Telegram bot.
 
 ### Model-to-engine trust boundary
 

@@ -14,6 +14,7 @@ The preceding local scaffold consisted of a synthetic long-only breakout demonst
 - Reserved the final holdout instead of calculating it during routine research.
 - Added persistent experiment records, manual review metadata and bounded task handoffs.
 - Added reproducible offline demo, replay CLI, HTML report, regression tests and blocker register.
+- Added rolling validation folds, cost/parameter sensitivity, a tamper-evident replay journal and opt-in Telegram sender with a mock network test.
 
 ## Verification
 

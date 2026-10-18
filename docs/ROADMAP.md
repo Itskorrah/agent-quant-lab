@@ -7,12 +7,12 @@ This document distinguishes implemented paths from planned integrations. A check
 | 0 | Local import, sample backtest and reports | **Implemented (simplified)** | Demo, CSV roundtrip and trade reconciliation tests |
 | 1 | Real MNQ vendor data adapter, licence record and session calendar | **Blocked on vendor access** | Obtain and validate contract-specific data; reconcile provider counts |
 | 2 | Multi-contract roll handling and independently checked NautilusTrader engine | **Not implemented** | Test contract mapping, fee and fill correctness with published fixture |
-| 3 | Walk-forward optimisation with purging/embargo and one-use holdout gate | **Partial** | Demonstrate intentional leakage rejection, reproduce locked holdout |
+| 3 | Walk-forward optimisation with purging/embargo and one-use holdout gate | **Partial — rolling folds + sensitivity** | Demonstrate intentional leakage rejection, reproduce locked holdout |
 | 4 | Robust multiple-testing/statistical inference and sensitivity tests | **Not implemented** | Negative controls and false discovery diagnostics |
-| 5 | Rich local UI, strategy comparison and chart-based trade inspection | **Partial** | Browser journey over at least two stored experiments |
+| 5 | Rich local UI, strategy comparison and chart-based trade inspection | **Offline HTML plots + trades** | Browser journey over at least two stored experiments |
 | 6 | Hermes agent execution + Codex SDK/CLI sandboxed adapter | **Protocol only** | Independent agent tasks, bounded execution and permissions tested |
-| 7 | Exchange-data-driven paper mode with realistic simulated order lifecycle | **Offline replay only** | Network disconnect/restart/reconciliation and risk halts tested |
-| 8 | Telegram authorised notifications, scheduler and monthly usage caps | **Message preview only** | Live delivery test to authorised account, no secrets in logs |
+| 7 | Exchange-data-driven paper mode with realistic simulated order lifecycle | **Offline replay + audit journal** | Network disconnect/restart/reconciliation and risk halts tested |
+| 8 | Telegram authorised notifications, scheduler and monthly usage caps | **Sender implemented (mocked), scheduler absent** | Live delivery test to authorised account, no secrets in logs |
 | 9 | Unattended health checks, backups, recovery and audit evidence | **Not implemented** | Restart/recovery drill, incident report and reproducible state |
 | 10 | Live brokerage connectivity | **Explicitly out of scope** | Separate explicit authorisation and independent security review required |
 

@@ -138,12 +138,16 @@ def simulate(bars: list[Bar], contract: Contract, cfg: Settings) -> dict:
     returns = [(equity[i]["equity"] - equity[i - 1]["equity"]) / equity[i - 1]["equity"]
                for i in range(1, len(equity)) if equity[i - 1]["equity"] > 0]
     # Avoid a pretend Sharpe: timing/session schedule is not established.
+    from .analytics import trade_statistics, utc_daily_statistics
+    trade_stats = trade_statistics(trades)
+    daily_stats = utc_daily_statistics(equity)
     wins = sum(1 for t in trades if t["net_pnl"] > 0)
     return {"contract": asdict(contract), "settings": asdict(cfg), "bar_count": len(bars),
             "trades": trades, "fills": fills, "equity_curve": equity,
             "metrics": {"ending_equity": round(cash, 2), "net_pnl": round(cash - cfg.starting_cash, 2),
                         "trade_count": len(trades), "win_rate": wins / len(trades) if trades else None,
                         "max_drawdown": round(max_dd, 6), "sharpe": None},
+            "trade_statistics": trade_stats, "daily_statistics": daily_stats,
             "risk_events": sorted(blockers), "synthetic_or_historical": "caller_must_label",
             "warnings": ["Research/replay simulation only; fills are modelled, not observed",
                          "Intrabar risk liquidation is assumed at bar close, potentially optimistic in gaps",

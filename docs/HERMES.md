@@ -16,7 +16,7 @@ The current `quantlab.orchestration.Queue` is a deterministic local protocol tha
 | paper_observer | manually approved candidate | simulated events | offline replay until later milestone |
 | performance_monitor | simulated trade ledger | deterioration investigation | alert/research only |
 
-`Queue.handoff()` restricts the initial transfer graph. Tasks are persisted in SQLite with strict state transitions. Production integration needs leases, idempotency, retry budgets, identity/signatures, role-specific credentials, sandboxing and independent service-level risk gates.
+`quantlab.bridge.enqueue_request()` validates role, field allowlists, hard per-request spend caps and forbidden direct privileged activation before persisting a task. It does not execute agent text. `Queue.handoff()` restricts the initial transfer graph. Tasks are persisted in SQLite with strict state transitions. Production integration needs leases, idempotency, retry budgets, identity/signatures, role-specific credentials, sandboxing and independent service-level risk gates.
 
 ## Proposed Hermes adapter workflow
 

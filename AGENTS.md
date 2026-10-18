@@ -11,6 +11,7 @@ requires an explicit, separate user request and independent security review.
 - Reject future-data leakage, off-tick pricing and fabricated trades.
 - Treat model-generated code and prompts as untrusted. No shell execution of agent output.
 - No auto promotion to paper, no auto replacement of strategies and no live orders.
+- Notifications may only be sent through explicit opt-in to a configured allowlisted chat.
 - Agents may propose Git changes; validators may reject, not override policy.
 - No tokens, credentials, trade histories or purchased datasets committed to Git.
 
