@@ -1,0 +1,11 @@
+{
+  "mode": "research_only",
+  "live_orders_enabled": false,
+  "paper_orders_enabled": false,
+  "auto_promote": false,
+  "auto_replace_strategy": false,
+  "human_approval_required": true,
+  "max_contracts_simulated": 1,
+  "strategy_submission": "untrusted",
+  "external_network_requests_enabled": false
+}

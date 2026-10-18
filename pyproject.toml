@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-quant-lab"
+version = "0.3.0"
+description = "Reproducible, research-only MNQ strategy experiments and offline replay"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Proprietary - private research"}
+authors = [{name = "Agent Quant Lab contributors"}]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.8"]
+
+[project.scripts]
+quantlab = "quantlab.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["quantlab*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
