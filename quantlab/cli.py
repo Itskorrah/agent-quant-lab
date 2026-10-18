@@ -17,6 +17,8 @@ from .orchestration import Queue
 from .registry import Registry
 from .research import experiment, final_holdout, quality_report
 from .sim import Settings, simulate
+from .providers import estimate_cost, acquire
+from .nautilus_integration import run_nautilus
 
 
 def json_file(path: str | Path, payload: dict) -> None:
@@ -79,9 +81,35 @@ def main(argv: list[str] | None = None) -> int:
     sending.add_argument("--type", choices=["research_complete", "validation_failed", "paper_halted", "data_failure"], required=True)
     sending.add_argument("--reason", default="")
     sending.add_argument("--confirm-send", action="store_true")
+    dbcost = sub.add_parser("databento-quote", help="Obtain free metadata cost estimate for one raw MNQ contract")
+    for p in (dbcost,):
+        p.add_argument("--symbol", required=True, help="e.g. MNQZ6, no continuous symbol")
+        p.add_argument("--start", required=True, help="ISO UTC start (inclusive)")
+        p.add_argument("--end", required=True, help="ISO UTC end (exclusive)")
+    dbget = sub.add_parser("databento-download", help="Cost-gated licensed MNQ data download; no secrets in arguments")
+    dbget.add_argument("--symbol", required=True)
+    dbget.add_argument("--start", required=True)
+    dbget.add_argument("--end", required=True)
+    dbget.add_argument("--out", required=True)
+    dbget.add_argument("--max-usd", type=float, default=0.0)
+    dbget.add_argument("--acknowledge-data-charges", action="store_true")
+    nt = sub.add_parser("nautilus-smoke", help="EXPERIMENTAL optional NautilusTrader 2.x EMA cross")
+    nt.add_argument("--csv", required=True)
+    nt.add_argument("--contract", required=True)
+    nt.add_argument("--out", default="runs/nautilus/smoke.json")
+    nt.add_argument("--starting-cash", type=float, default=20000.0)
     args = parser.parse_args(argv)
     contract = Contract(contract_id=getattr(args, "contract", "MNQ-DEMO"))
-    if args.command == "demo":
+    if args.command == "databento-quote":
+        print(json.dumps(estimate_cost(args.symbol, args.start, args.end), indent=2))
+    elif args.command == "databento-download":
+        print(json.dumps(acquire(args.symbol, args.start, args.end, args.out,
+                                 max_usd=args.max_usd,
+                                 acknowledge_charges=args.acknowledge_data_charges), indent=2))
+    elif args.command == "nautilus-smoke":
+        result = run_nautilus(args.csv, args.contract, out=args.out, starting_cash=args.starting_cash)
+        print(f"EXPERIMENTAL NautilusTrader smoke test; {len(result['fills'])} fill records; {args.out}")
+    elif args.command == "demo":
         base = Path(args.out)
         bars = synthetic_bars(contract=contract)
         to_csv(base / "synthetic.csv", bars)

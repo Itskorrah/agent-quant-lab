@@ -30,3 +30,10 @@ Last reviewed: 18 October 2026.
 ## Next delivery gate
 
 A real MNQ historical contract is loaded with a verified provider licence, a session calendar and a comparable independent backtester. Required artefacts: provider source hash, contract ID, bar coverage, rejected rows, independent accounting fixture, cost model and reviewer signoff. No claims of strategy profitability before this evidence exists.
+
+## v0.6 — Data and independent engine integration blockers
+
+1. **Account/entitlement (external):** Databento requires an authenticated account/API key and CME data rights. No key provided; historical MNQ not downloaded. `databento-quote` and capped `databento-download` are ready for the account owner to run. Default download blocked absent explicit acknowledgement and cost cap.
+2. **Runtime unavailable (environment):** The NautilusTrader 2.x wheel could not be installed due to blocked package-index/network access. `nautilus-smoke` is an experimental API implementation; smoke execution, fills and engine compatibility are unverified.
+3. **Contract reference data:** Exchange activation/expiry, roll calendar, margin, actual trading sessions and revised fees remain unimplemented in Nautilus adapter. The runner's metadata is illustrative and performance output cannot be used for decisions.
+4. **Research validity:** No real-data independent hand-calculated P&L fixture, comparison between models, exchange quote data, or real forward paper results yet. Fills and costs in Nautilus smoke are optimistic by design.

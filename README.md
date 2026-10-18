@@ -186,3 +186,45 @@ Read [AGENTS.md](AGENTS.md) before coding. Contributions should include a reprod
 ## Disclaimer
 
 This code is for experimentation, education and software research. It is **not financial advice**, not a trading recommendation and not evidence that any automated strategy will be profitable. Leveraged futures trading carries substantial financial risk. No use of live capital is authorised by this project.
+
+## Optional licensed MNQ data acquisition (Databento)
+
+**New experimental integration (v0.6).** This project does **not** bundle any real exchange market data. You must have your own provider entitlement. Never download/commit unlicensed exchange data or place a Databento key in the Git repository. Public GitHub datasets do not automatically confer CME redistribution rights.
+
+Databento's historical GLBX.MDP3 service supports `ohlcv-1m` and `metadata.get_cost`. A Databento account and key are required; introductory credits may be available but their application is provider-dependent. The quote step **does not download market data**. The download step is **opt-in only** and rejects estimates above an explicit USD cap; vendor charges may vary from estimates.
+
+```bash
+python -m pip install -e '.[databento]'
+# Set DATABENTO_API_KEY in your local environment; never paste it into chat or GitHub.
+python -m quantlab databento-quote \
+  --symbol MNQZ6 --start 2026-10-01T00:00:00Z --end 2026-10-02T00:00:00Z
+
+# ONLY if you have checked licensing, credits, pricing and explicitly approve cost:
+python -m quantlab databento-download \
+  --symbol MNQZ6 --start 2026-10-01T00:00:00Z --end 2026-10-02T00:00:00Z \
+  --out data/mnqz6-20261001 --max-usd 1.00 --acknowledge-data-charges
+
+python -m quantlab import-csv \
+  --csv data/mnqz6-20261001/mnq_1m.csv --contract MNQZ6 \
+  --provider Databento --licence 'Your actual Databento/CME entitlement' \
+  --dataset data/mnqz6-20261001/import-check --seconds 60
+```
+
+Output stays in ignored `data/`: provider-native raw DBN, normalised bars, and a provenance file with both SHA-256 checksums. The tool enforces one actual quarterly MNQ raw contract, one-minute bars, UTC timestamps, basic OHLC/tick integrity and a maximum **31-day request**. Interval gaps are flagged, not fabricated. It does not resolve expiry calendars, roll trades, exchange holidays or whether the vendor grants a particular redistribution right.
+
+## Experimental NautilusTrader 2.x adapter
+
+NautilusTrader is a **separate optional** engine, not yet verified in this execution environment. It was not possible to install the Rust wheel in the restricted build environment; tests verify timestamp transformations and input contracts but **do not verify its Python API or trades**. Its output is for **smoke testing only**, and expressly uses zero fees, simplified margin and incomplete contract activation/expiry metadata. Do not make trading decisions based on this output.
+
+On a supported Python 3.13+ environment:
+
+```bash
+python -m pip install -U --pre 'nautilus_trader>=2.0.0rc1,<2.1' pandas
+python -m quantlab nautilus-smoke \
+  --csv data/mnqz6-20261001/mnq_1m.csv --contract MNQZ6 \
+  --out runs/nautilus/smoke.json
+```
+
+The integration creates `FuturesContract`, start-of-bar `ts_event` and **end-of-bar `ts_init`** (to avoid showing a complete one-minute bar early), runs a simple EMA crossover on external bars through `BacktestEngine` using a simulated MARGIN account, and exports engine reports. Because the underlying engine hasn't been executed here, **runtime incompatibilities remain possible**. The strategy is deliberately unrelated to the existing breakout benchmark; cross-engine P&L equivalence has not been demonstrated.
+
+**Stop conditions before considering any research performance evidence:** verify the exact NautilusTrader wheel/API on your target platform; replace placeholder contract lifecycle/margin metadata; model fees/slippage; validate fill ordering and session closures; reconcile independent accounting scenarios; and isolate untouched out-of-sample data. See [data-to-engine handover](docs/REAL_MNQ_DATA.md) and [blockers](docs/BLOCKERS.md).
