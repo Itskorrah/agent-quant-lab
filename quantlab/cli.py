@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 
 from .dashboard import export_report
+from .batch_dashboard import export_batch
+from .discovery import batch_discover
 from .market import Contract, load_csv, synthetic_bars, to_csv, write_manifest
 from .notifications import telegram_preview
 from .validation import rolling_validation, sensitivity
@@ -46,6 +48,13 @@ def main(argv: list[str] | None = None) -> int:
     replay.add_argument("--contract", required=True)
     replay.add_argument("--out", default="runs/replay/report.json")
     replay.add_argument("--strategy", choices=["breakout", "mean_reversion"], default="breakout")
+    batch = sub.add_parser("batch-discover", help="Test six predetermined candidates and validate one selected using training only")
+    batch.add_argument("--csv", required=True)
+    batch.add_argument("--contract", required=True)
+    batch.add_argument("--out", default="runs/discovery/report.json")
+    batch.add_argument("--registry", default="runs/registry.db")
+    batch_demo = sub.add_parser("batch-demo", help="Run the discovery workflow on fabricated prices")
+    batch_demo.add_argument("--out", default="runs/batch-demo")
     walk = sub.add_parser("walk-forward", help="Evaluate chronological validation folds, reserve final holdout")
     walk.add_argument("--csv", required=True)
     walk.add_argument("--contract", required=True)
@@ -82,6 +91,13 @@ def main(argv: list[str] | None = None) -> int:
         export_report(report, base / "report.html")
         print("SYNTHETIC demonstration completed — not evidence of trading performance")
         print("Report:", base / "report.html")
+    elif args.command == "batch-demo":
+        base = Path(args.out)
+        bars = synthetic_bars(contract=contract)
+        report = batch_discover(bars, contract, synthetic=True)
+        json_file(base / "report.json", report)
+        export_batch(report, base / "index.html")
+        print("SYNTHETIC research batch complete —", base / "index.html")
     elif args.command == "import-csv":
         if args.contract == "MNQ-DEMO":
             parser.error("Real CSV requires a real contract ID")
@@ -92,12 +108,19 @@ def main(argv: list[str] | None = None) -> int:
         print("Validated manifest:", target)
         if details["unexpected_interval_count"]:
             print("WARNING: unexpected intervals:", details["unexpected_interval_count"])
-    elif args.command in ("research", "replay", "walk-forward", "sensitivity"):
+    elif args.command in ("research", "replay", "walk-forward", "sensitivity", "batch-discover"):
         if args.contract == "MNQ-DEMO":
             parser.error("Historical CSV requires actual contract ID")
         bars, details = load_csv(args.csv, contract)
         cfg = Settings(strategy=getattr(args, "strategy", "breakout"))
-        if args.command == "walk-forward":
+        if args.command == "batch-discover":
+            report = batch_discover(bars, contract, synthetic=False)
+            report["dataset"] = details
+            with Registry(args.registry) as reg:
+                identifier = reg.save(report, kind="historical")
+            report["experiment_id"] = identifier
+            export_batch(report, Path(args.out).with_suffix(".html"))
+        elif args.command == "walk-forward":
             report = rolling_validation(bars, contract, cfg, folds=args.folds, gap=args.gap)
             report["dataset"] = details
         elif args.command == "sensitivity":

@@ -15,6 +15,7 @@ The preceding local scaffold consisted of a synthetic long-only breakout demonst
 - Added persistent experiment records, manual review metadata and bounded task handoffs.
 - Added reproducible offline demo, replay CLI, HTML report, regression tests and blocker register.
 - Added rolling validation folds, cost/parameter sensitivity, a tamper-evident replay journal and opt-in Telegram sender with a mock network test.
+- Added an actual deterministic discovery workflow with train-only selection of one candidate for separate validation, an HTML leaderboard and regression tests for holdout leakage.
 
 ## Verification
 

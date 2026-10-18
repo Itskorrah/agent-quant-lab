@@ -4,7 +4,7 @@ This document distinguishes implemented paths from planned integrations. A check
 
 | Stage | Deliverable | State | Objective acceptance test |
 | --- | --- | --- | --- |
-| 0 | Local import, sample backtest and reports | **Implemented (simplified)** | Demo, CSV roundtrip and trade reconciliation tests |
+| 0 | Local import, sample backtest, deterministic candidate discovery and reports | **Implemented (simplified)** | Demo, six-candidate batch, CSV roundtrip and trade reconciliation tests |
 | 1 | Real MNQ vendor data adapter, licence record and session calendar | **Blocked on vendor access** | Obtain and validate contract-specific data; reconcile provider counts |
 | 2 | Multi-contract roll handling and independently checked NautilusTrader engine | **Not implemented** | Test contract mapping, fee and fill correctness with published fixture |
 | 3 | Walk-forward optimisation with purging/embargo and one-use holdout gate | **Partial — rolling folds + sensitivity** | Demonstrate intentional leakage rejection, reproduce locked holdout |
@@ -20,7 +20,7 @@ This document distinguishes implemented paths from planned integrations. A check
 
 1. Validate sample vendor data and session boundaries. Never silently forward-fill gaps.
 2. Add independent event-driven backtesting against actual MNQ contracts, commissions and roll events.
-3. Build experiment comparisons with an untouched holdout and multiple-testing correction.
+3. Expand the fixed-candidate leaderboard into statistically defensible research with locked holdout and multiple-testing correction.
 4. Add an interactive local dashboard and reproducible replay debugger.
 5. Connect Hermes to constrained JSON task contracts and Codex in isolated worktrees.
 6. Integrate licensed streaming data and a persistent, fail-closed paper engine.

@@ -1,6 +1,6 @@
 # Hermes + Codex integration contract (design, not active integration)
 
-The current `quantlab.orchestration.Queue` is a deterministic local protocol that could back Hermes specialist bot tools. It does **not** run Hermes, send requests to LLMs or consume Codex subscription usage.
+Hermes can eventually invoke `python -m quantlab batch-discover` for a bounded, deterministic six-candidate evaluation, but **no LLM is currently connected**. The current `quantlab.orchestration.Queue` is a deterministic local protocol that could back Hermes specialist bot tools. It does **not** run Hermes, send requests to LLMs or consume Codex subscription usage.
 
 ## Agent responsibilities
 

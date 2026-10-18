@@ -17,6 +17,7 @@ Agent Quant Lab is built around one principle: **a research result is only as cr
 | Market data | Strict UTC OHLCV CSV ingestion, corruption checks, checksum, immutable manifests, interval warnings | Implemented, file-based |
 | Backtesting | Two transparent signal rules, next-bar-open fills, long/short, costs, cash ledger, daily loss guard | **Simplified bar simulator** |
 | Validation | Chronological splits, rolling validation folds, sensitivity matrix, reserved holdout | Implemented baseline; statistical rigour incomplete |
+| Research batch | Six fixed strategy variants, train-only selection, single validation check, candidate leaderboard | Implemented deterministic workflow; not AI alpha discovery |
 | Research memory | SQLite immutable experiment payloads, review decisions and audit events | Implemented |
 | Agents | Named roles, constrained task states and controlled handoffs | Local protocol; **not Hermes-connected** |
 | Paper | Offline historical replay with tamper-evident event journal | Implemented, **not live paper** |
@@ -46,9 +47,10 @@ python -m venv .venv
 # macOS/Linux: source .venv/bin/activate
 python -m pip install -e .
 python -m quantlab demo --out runs/demo
+python -m quantlab batch-demo --out runs/batch-demo
 ```
 
-Open `runs/demo/report.html` in your browser. The CLI also saves fabricated price bars and the complete JSON report. **Do not interpret synthetic performance as evidence of a tradeable strategy.**
+Open `runs/demo/report.html` for one strategy and `runs/batch-demo/index.html` for the comparative six-candidate research workflow. The CLI also saves fabricated price bars and the complete JSON report. **Do not interpret synthetic performance as evidence of a tradeable strategy.**
 
 ### Work with actual historical data
 
@@ -74,6 +76,10 @@ python -m quantlab research \
   --csv path/to/your-bars.csv --contract ACTUAL_CONTRACT_ID \
   --strategy breakout --registry runs/registry.db \
   --out runs/research/report.json
+
+python -m quantlab batch-discover \
+  --csv path/to/your-bars.csv --contract ACTUAL_CONTRACT_ID \
+  --registry runs/registry.db --out runs/discovery/report.json
 
 python -m quantlab html \
   --report runs/research/report.json --out runs/research/report.html
@@ -127,6 +133,8 @@ flowchart TB
 | `quantlab/orchestration.py` | Task schema, finite-state queue and allowed agent-to-agent handoffs |
 | `quantlab/dashboard.py` | Offline HTML equity curve, fills/trades and escaped evidence |
 | `quantlab/validation.py` | Rolling chronological folds and pre-holdout cost/parameter sensitivity |
+| `quantlab/discovery.py` | Bounded deterministic candidate screening and separate validation |
+| `quantlab/batch_dashboard.py` | Offline comparative candidate table and selected validation equity curve |
 | `quantlab/journal.py` | Replay events with chained SHA-256 and integrity verification |
 | `quantlab/bridge.py` | Validates constrained untrusted JSON task requests for future Hermes integration |
 | `quantlab/telegram.py` | Opt-in HTTPS sender, credential allowlist; only mocked locally |

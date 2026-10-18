@@ -22,7 +22,7 @@ Last reviewed: 18 October 2026.
 - No bid/ask or depth-of-book; fills approximate bar-open prices plus adverse slippage.
 - UTC daily risk reset; bar-close risk liquidation can understate gap losses.
 - Validation research does not automatically compute a held-out final result; current separate `final_holdout` guard is not a secure single-use service.
-- Parameter sensitivity and rolling chronological folds exist, but lack statistically sound experiment-selection adjustment or overlap-aware purging/embargo.
+- Fixed-candidate batch discovery, parameter sensitivity and rolling chronological folds exist, but lack statistically sound experiment-selection adjustment or overlap-aware purging/embargo.
 - No risk-adjusted Sharpe ratio on intraday price series; left null intentionally.
 - No deployed Hermes/LLM workers, event-driven broker gateway or tested real Telegram credentials.
 - No independent security penetration test, hosted CI verification or operational incident drill.
