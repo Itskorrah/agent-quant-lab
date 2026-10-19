@@ -9,6 +9,16 @@
 
 Agent Quant Lab is built around one principle: **a research result is only as credible as its input data, execution assumptions, experimental controls and independent verification.** It provides a small, fully inspectable foundation for a more autonomous Hermes + Codex research system without making AI models responsible for exchange execution.
 
+## Use with Codex — copy-and-paste workflows
+
+Open the project in Codex and paste this prompt. It sets up the relevant tools, verifies their availability and begins the actual workflow.
+
+```text
+In my current Codex project, use https://github.com/Itskorrah/agent-quant-lab. Read the latest README, AGENTS.md and prompts/codex/setup-and-run.md; inspect Git status and preserve existing changes. Prepare the documented Python environment, inspect AGENTS.md and the research safeguards, and run `python -m pytest -q` and `python -m quantlab demo --out runs/demo`. Then review one concrete offline research issue, implement a bounded improvement and verify deterministic results. Do not connect brokers, place orders, purchase datasets or present synthetic returns as real performance. Use local tests rather than GitHub Actions. For verified, authorised source changes, commit and push on a feature branch, create a PR and merge when permitted, respecting required reviews and branch protection. Document checks, results and blockers.
+```
+
+More copyable workflows: [full setup and execution](prompts/codex/setup-and-run.md) · [update](prompts/codex/update.md) · [resume](prompts/codex/resume.md) · [extended autonomous](prompts/codex/autonomous.md).
+
 ## At a glance
 
 | Layer | Current implementation | Status |
