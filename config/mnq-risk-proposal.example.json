@@ -1,0 +1,11 @@
+{
+  "contract_id": "MNQ-DEMO",
+  "direction": "long",
+  "stop_ticks": 40,
+  "risk_budget_usd": 100,
+  "max_session_loss_usd": 250,
+  "session_realised_loss_usd": 70,
+  "round_trip_fee_usd": 3.0,
+  "slippage_ticks": 2,
+  "existing_contracts": 0
+}
