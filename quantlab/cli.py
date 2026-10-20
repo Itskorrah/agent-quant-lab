@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .dashboard import export_report
@@ -19,6 +21,8 @@ from .research import experiment, final_holdout, quality_report
 from .sim import Settings, simulate
 from .providers import estimate_cost, acquire
 from .nautilus_integration import run_nautilus
+from .risk_preview import assess_proposal
+from .sec_intelligence import scan_watchlist, write_snapshot
 
 
 def json_file(path: str | Path, payload: dict) -> None:
@@ -98,9 +102,44 @@ def main(argv: list[str] | None = None) -> int:
     nt.add_argument("--contract", required=True)
     nt.add_argument("--out", default="runs/nautilus/smoke.json")
     nt.add_argument("--starting-cash", type=float, default=20000.0)
+    risk = sub.add_parser("risk-preview", help="Review hypothetical MNQ stop risk; never creates an order")
+    risk.add_argument("--proposal", required=True, help="Bounded JSON containing one hypothetical risk proposal")
+    risk.add_argument("--contract", required=True, help="Exact MNQ contract ID")
+    risk.add_argument("--out", required=True, help="New immutable result JSON path")
+    sec = sub.add_parser("sec-filings", help="Record SEC 8-K/10-Q/10-K context, not intraday signals")
+    sec.add_argument("--watchlist", required=True, help="JSON array of symbol/CIK pairs")
+    inputs = sec.add_mutually_exclusive_group(required=True)
+    inputs.add_argument("--offline-dir", help="Previously saved CIK##########.json files")
+    inputs.add_argument("--fetch", action="store_true", help="Explicitly fetch read-only SEC public submissions")
+    sec.add_argument("--observed-at", help="Required UTC observation time for offline files, e.g. 2026-10-21T00:00:00Z")
+    sec.add_argument("--since", help="Filter to filing dates from YYYY-MM-DD, inclusive")
+    sec.add_argument("--out", required=True, help="New immutable result JSON path")
     args = parser.parse_args(argv)
     contract = Contract(contract_id=getattr(args, "contract", "MNQ-DEMO"))
-    if args.command == "databento-quote":
+    if args.command == "risk-preview":
+        proposal_path = Path(args.proposal)
+        if proposal_path.stat().st_size > 8192:
+            parser.error("Risk proposal exceeds 8192-byte cap")
+        proposal = json.loads(proposal_path.read_text(encoding="utf-8"))
+        report = assess_proposal(proposal, contract)
+        write_snapshot(args.out, report)
+        print(json.dumps(report, indent=2))
+    elif args.command == "sec-filings":
+        if args.fetch and args.observed_at is not None:
+            parser.error("--observed-at is only permitted for offline files")
+        if not args.fetch and not args.observed_at:
+            parser.error("--observed-at UTC is mandatory for offline snapshots")
+        watchlist_path = Path(args.watchlist)
+        if watchlist_path.stat().st_size > 8192:
+            parser.error("Watchlist exceeds 8192-byte cap")
+        watchlist = json.loads(watchlist_path.read_text(encoding="utf-8"))
+        observed_at = datetime.now(timezone.utc).isoformat() if args.fetch else args.observed_at
+        report = scan_watchlist(watchlist, offline_dir=args.offline_dir,
+                                fetch=args.fetch, observed_at_utc=observed_at,
+                                since=args.since, user_agent=os.environ.get("SEC_USER_AGENT"))
+        write_snapshot(args.out, report)
+        print(f"Recorded {report['filings_count']} contextual SEC filings in {args.out} — not trading signals")
+    elif args.command == "databento-quote":
         print(json.dumps(estimate_cost(args.symbol, args.start, args.end), indent=2))
     elif args.command == "databento-download":
         print(json.dumps(acquire(args.symbol, args.start, args.end, args.out,
