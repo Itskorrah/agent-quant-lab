@@ -166,3 +166,39 @@ def write_snapshot(path: str | Path, report: dict) -> Path:
         json.dump(report, output, indent=2, sort_keys=True, allow_nan=False)
         output.write("\n")
     return path
+
+
+def compare_snapshots(previous: dict, current: dict) -> dict:
+    """Detect newly observed filings across immutable context snapshots; no signals."""
+    for value in (previous, current):
+        if not isinstance(value, dict) or value.get("schema_version") != 1 or value.get("kind") != "sec_filing_context_only":
+            raise ValueError("Only version-1 SEC context snapshots can be compared")
+        if not isinstance(value.get("filings"), list):
+            raise ValueError("SEC context snapshot missing filings")
+        watchlist_entries({"watchlist": value.get("watchlist")})
+    if previous["watchlist"] != current["watchlist"]:
+        raise ValueError("Watchlist changed: compare like-for-like snapshots")
+    older, newer = _utc_instant(previous.get("observed_at_utc")), _utc_instant(current.get("observed_at_utc"))
+    if older >= newer:
+        raise ValueError("Current snapshot must be observed later than previous")
+
+    def identify(row: dict) -> tuple:
+        if not isinstance(row, dict) or not all(isinstance(row.get(k), str) for k in ("cik", "accession", "form")):
+            raise ValueError("Malformed filing in snapshot")
+        return (row["cik"], row["accession"], row["form"])
+
+    old_ids = {identify(row) for row in previous["filings"]}
+    seen = set()
+    novel = []
+    for row in current["filings"]:
+        key = identify(row)
+        if key not in old_ids and key not in seen:
+            novel.append(row)
+        seen.add(key)
+    novel.sort(key=lambda r: (r.get("filing_date", ""), r.get("symbol", ""), r["accession"]), reverse=True)
+    return {"schema_version": 1, "kind": "sec_filing_context_delta",
+            "previous_observed_at_utc": older, "current_observed_at_utc": newer,
+            "new_filings": novel, "new_count": len(novel), "eligible_for_signals": False,
+            "eligible_for_paper": False, "eligible_for_live": False,
+            "warnings": ["Newly observed in these two snapshots does not mean newly filed or market-moving",
+                         "Changing SEC coverage or filters can cause differences; filing timestamps are not point-in-time validated"]}
