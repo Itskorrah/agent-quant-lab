@@ -57,6 +57,18 @@ SEC filing dates are day-level. Its `acceptanceDateTime` value has no explicit t
 
 Snapshots use exclusive file creation, so rerunning with the same `--out` refuses to overwrite existing research evidence.
 
+### Compare saved SEC observations
+
+```bash
+python -m quantlab sec-diff \
+  --previous runs/sec/snapshot-001.json \
+  --current runs/sec/snapshot-002.json \
+  --out runs/sec/newly-observed.json
+```
+
+The diff enforces the same watchlist, chronological UTC observation times and compatible snapshot schema. It reports accessions **newly observed between these two snapshots**, not proof that filings were freshly published. Changes to collection filters/SEC history and unverified announcement timestamps prevent this from being a backtest-ready release-event detector.
+
+
 ## Excluded intentionally
 
 - 13F/Buffett copycat: quarterly lag and only partial exposures, not suitable for automated MNQ entries.
