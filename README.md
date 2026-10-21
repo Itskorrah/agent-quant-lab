@@ -33,6 +33,7 @@ More copyable workflows: [full setup and execution](prompts/codex/setup-and-run.
 | Paper | Offline historical replay with tamper-evident event journal | Implemented, **not live paper** |
 | Dashboard | Offline HTML equity chart, trade table and escaped JSON evidence | Implemented, no interactive live UI |
 | Notifications | Preview + opt-in allowlisted one-shot sender (delivery not tested live) | Implemented, **not sent** |
+| Optional risk preview / SEC context | MNQ hypothetical sizing review; filing watchlist, source hashes, immutable snapshots | Implemented, **not trading signals** |
 | NautilusTrader | Planned independent engine integration | Not implemented |
 | Live market feed | Licensed CME market-data connection | Not implemented |
 | Broker connection | No broker or order placement code | Intentionally absent |
@@ -196,6 +197,32 @@ Read [AGENTS.md](AGENTS.md) before coding. Contributions should include a reprod
 ## Disclaimer
 
 This code is for experimentation, education and software research. It is **not financial advice**, not a trading recommendation and not evidence that any automated strategy will be profitable. Leveraged futures trading carries substantial financial risk. No use of live capital is authorised by this project.
+
+## New: SEC context and MNQ risk preview (research only)
+
+The selective [trader-skill-informed integration](docs/TRADER_SKILL_INTEGRATION.md) adds two **optional, standard-library** research utilities without enabling orders, broker connections, auto-promotions or trading signals:
+
+- **MNQ stop-risk assessment** — using actual MNQ tick value, hypothetical stop width, adverse slippage on entry and exit, fees, declared session-loss headroom, the existing one-contract research cap and optional explicitly illustrative margin assumptions. Returns a fingerprinted report, never an order.
+- **SEC filing context** — a configurable US-company watchlist that normalises official 8-K/10-Q/10-K submissions from opt-in SEC reads or offline saved responses. Reports preserve source hashes, observation metadata and refusal to treat filing times as validated intraday signals.
+
+```bash
+# Fully offline; the example MNQ-DEMO identifier is intentionally synthetic.
+python -m quantlab risk-preview \
+  --proposal config/mnq-risk-proposal.example.json \
+  --contract MNQ-DEMO --out runs/risks/demo.json
+
+# SEC: network access is opt-in. Supply your contact via SEC_USER_AGENT locally.
+python -m quantlab sec-filings \
+  --watchlist config/sec-watchlist.example.json --fetch \
+  --since 2026-10-01 --out runs/sec/current.json
+
+# To analyse previously saved SEC CIK##########.json responses entirely offline:
+python -m quantlab sec-filings \
+  --watchlist config/sec-watchlist.example.json --offline-dir data/sec-captures \
+  --observed-at 2026-10-21T00:00:00Z --out runs/sec/offline.json
+```
+
+The snapshots are immutable at their output paths; choose new paths for new observations. These features provide contextual research **only**. They do not establish profitable signals or update strategy selection or execution behaviour. See [implementation, limitations and test instructions](docs/TRADER_SKILL_INTEGRATION.md).
 
 ## Optional licensed MNQ data acquisition (Databento)
 
