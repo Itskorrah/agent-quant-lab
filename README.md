@@ -222,7 +222,7 @@ python -m quantlab sec-filings \
   --observed-at 2026-10-21T00:00:00Z --out runs/sec/offline.json
 ```
 
-The snapshots are immutable at their output paths; choose new paths for new observations. These features provide contextual research **only**. They do not establish profitable signals or update strategy selection or execution behaviour. See [implementation, limitations and test instructions](docs/TRADER_SKILL_INTEGRATION.md).
+The snapshots are immutable at their output paths; choose new paths for new observations. After collecting two comparable snapshots, use `python -m quantlab sec-diff --previous runs/sec/current.json --current runs/sec/later.json --out runs/sec/delta.json` to list newly observed SEC filings, with no trading signals or auto-notifications. These features provide contextual research **only**. They do not establish profitable signals or update strategy selection or execution behaviour. See [implementation, limitations and test instructions](docs/TRADER_SKILL_INTEGRATION.md).
 
 ## Optional licensed MNQ data acquisition (Databento)
 
