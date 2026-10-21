@@ -22,7 +22,7 @@ from .sim import Settings, simulate
 from .providers import estimate_cost, acquire
 from .nautilus_integration import run_nautilus
 from .risk_preview import assess_proposal
-from .sec_intelligence import scan_watchlist, write_snapshot
+from .sec_intelligence import scan_watchlist, write_snapshot, compare_snapshots
 
 
 def json_file(path: str | Path, payload: dict) -> None:
@@ -114,9 +114,22 @@ def main(argv: list[str] | None = None) -> int:
     sec.add_argument("--observed-at", help="Required UTC observation time for offline files, e.g. 2026-10-21T00:00:00Z")
     sec.add_argument("--since", help="Filter to filing dates from YYYY-MM-DD, inclusive")
     sec.add_argument("--out", required=True, help="New immutable result JSON path")
+    delta = sub.add_parser("sec-diff", help="Compare two saved SEC snapshots for newly observed filings")
+    delta.add_argument("--previous", required=True)
+    delta.add_argument("--current", required=True)
+    delta.add_argument("--out", required=True, help="New immutable delta JSON path")
     args = parser.parse_args(argv)
     contract = Contract(contract_id=getattr(args, "contract", "MNQ-DEMO"))
-    if args.command == "risk-preview":
+    if args.command == "sec-diff":
+        previous_path, current_path = Path(args.previous), Path(args.current)
+        if previous_path.stat().st_size > 5_000_000 or current_path.stat().st_size > 5_000_000:
+            parser.error("SEC context snapshot exceeds size cap")
+        previous = json.loads(previous_path.read_text(encoding="utf-8"))
+        current = json.loads(current_path.read_text(encoding="utf-8"))
+        result = compare_snapshots(previous, current)
+        write_snapshot(args.out, result)
+        print(f"Recorded {result['new_count']} newly observed filings in {args.out} — contextual only")
+    elif args.command == "risk-preview":
         proposal_path = Path(args.proposal)
         if proposal_path.stat().st_size > 8192:
             parser.error("Risk proposal exceeds 8192-byte cap")
