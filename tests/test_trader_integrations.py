@@ -147,5 +147,43 @@ class SecTests(unittest.TestCase):
                       "--out", str(directory / "out.json")])
 
 
+class SecDiffTests(unittest.TestCase):
+    def test_delta_is_deterministic_and_not_a_signal(self):
+        from quantlab.sec_intelligence import compare_snapshots
+        base = {"schema_version": 1, "kind": "sec_filing_context_only",
+                "watchlist": [{"symbol": "NVDA", "cik": "0001045810"}],
+                "filings": [], "observed_at_utc": "2026-10-01T00:00:00Z"}
+        current = {**base, "observed_at_utc": "2026-10-02T00:00:00Z",
+                   "filings": [{"cik": "0001045810", "accession": "0001045810-26-000001",
+                                "form": "8-K", "symbol": "NVDA", "filing_date": "2026-10-01"}]}
+        report = compare_snapshots(base, current)
+        self.assertEqual(report["new_count"], 1)
+        self.assertFalse(report["eligible_for_signals"])
+        self.assertEqual(report, compare_snapshots(base, current))
+        with self.assertRaises(ValueError):
+            compare_snapshots(current, base)
+        with self.assertRaises(ValueError):
+            compare_snapshots(base, {**current, "watchlist": [{"symbol": "AAPL", "cik": "0000320193"}]})
+
+    def test_cli_offline_snapshot_delta(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            watch = [{"symbol": "NVDA", "cik": "0001045810"}]
+            p = {"schema_version": 1, "kind": "sec_filing_context_only",
+                 "watchlist": watch, "filings": [],
+                 "observed_at_utc": "2026-10-01T00:00:00+00:00"}
+            c = {**p, "observed_at_utc": "2026-10-02T00:00:00+00:00",
+                 "filings": [{"cik": "0001045810", "accession": "0001045810-26-000001",
+                              "form": "8-K", "filing_date": "2026-10-01", "symbol": "NVDA"}]}
+            a, b, out = root / "previous.json", root / "current.json", root / "delta.json"
+            a.write_text(json.dumps(p))
+            b.write_text(json.dumps(c))
+            self.assertEqual(main(["sec-diff", "--previous", str(a), "--current", str(b),
+                                   "--out", str(out)]), 0)
+            result = json.loads(out.read_text())
+            self.assertEqual(result["new_count"], 1)
+            self.assertFalse(result["eligible_for_live"])
+
+
 if __name__ == "__main__":
     unittest.main()
