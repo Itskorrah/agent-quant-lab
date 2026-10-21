@@ -1,0 +1,8 @@
+{
+  "watchlist": [
+    {"symbol": "NVDA", "cik": "0001045810"},
+    {"symbol": "AAPL", "cik": "0000320193"},
+    {"symbol": "MSFT", "cik": "0000789019"},
+    {"symbol": "GOOGL", "cik": "0001652044"}
+  ]
+}

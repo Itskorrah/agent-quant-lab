@@ -16,6 +16,10 @@ This document distinguishes implemented paths from planned integrations. A check
 | 9 | Unattended health checks, backups, recovery and audit evidence | **Not implemented** | Restart/recovery drill, incident report and reproducible state |
 | 10 | Live brokerage connectivity | **Explicitly out of scope** | Separate explicit authorisation and independent security review required |
 
+## Optional contextual research utilities (21 October 2026)
+
+A selective, research-only integration of SEC EDGAR submissions context, snapshot differences and deterministic hypothetical MNQ stop-risk sizing is implemented in `quantlab/sec_intelligence.py` and `quantlab/risk_preview.py`. This **does not** complete real-time market news, price alerts, independently verified session boundaries, actionable futures stops or a live execution risk gateway. See `docs/TRADER_SKILL_INTEGRATION.md`. Validation against actual SEC network responses and full CI remains outstanding.
+
 ## Build order
 
 1. Validate sample vendor data and session boundaries. Never silently forward-fill gaps.

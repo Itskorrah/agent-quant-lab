@@ -31,6 +31,13 @@ Last reviewed: 18 October 2026.
 
 A real MNQ historical contract is loaded with a verified provider licence, a session calendar and a comparable independent backtester. Required artefacts: provider source hash, contract ID, bar coverage, rejected rows, independent accounting fixture, cost model and reviewer signoff. No claims of strategy profitability before this evidence exists.
 
+## Selective trader-skill integration validation (21 October 2026)
+
+- SEC client read-only code and offline fixtures are present, but real SEC HTTP requests and latency/availability have not been exercised in this build environment. SEC filing dates and unzoned acceptance timestamps must not be fed to historical one-minute signals.
+- The risk preview assumes a **hypothetical** stop distance and user-supplied slippage, fees, session realised loss and optional margin. It is independent of the simulator and cannot enforce actual brokerage position limits or account state. Do not interpret a nominal pass as trade authorisation.
+- The SEC diff compares saved snapshots, not real-time exchange-vetted announcement times. Scheduled monitoring, independent news verification and active notifications remain future work.
+- Core end-to-end test suite needs execution in an authenticated local clone; the newly written modules were checked using an isolated local harness. Paid GitHub Actions were not run.
+
 ## v0.6 — Data and independent engine integration blockers
 
 1. **Account/entitlement (external):** Databento requires an authenticated account/API key and CME data rights. No key provided; historical MNQ not downloaded. `databento-quote` and capped `databento-download` are ready for the account owner to run. Default download blocked absent explicit acknowledgement and cost cap.
